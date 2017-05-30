@@ -242,6 +242,9 @@ message SolverParameter {
 
   // Overlap compute and communication for data parallel training
   optional bool layer_wise_reduce = 41 [default = true];
+
+  // For exponential snapshots
+  optional float snapshot_factor = 42 [default = 0.0];
 }
 
 // A message that stores the solver snapshots

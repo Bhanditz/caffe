@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <cmath>
 
 #include "caffe/solver.hpp"
 #include "caffe/util/format.hpp"
@@ -253,8 +254,12 @@ void Solver<Dtype>::Step(int iters) {
     SolverAction::Enum request = GetRequestedAction();
 
     // Save a snapshot if needed.
-    if ((param_.snapshot()
-         && iter_ % param_.snapshot() == 0
+    if ((param_.snapshot() && ((param_.snapshot_factor()
+         && iter_ >= param_.snapshot()
+         && iter_ == round(param_.snapshot() * pow(param_.snapshot_factor(),
+                     round(log((double)iter_ / param_.snapshot())
+                             / log(param_.snapshot_factor())))))
+         || (!param_.snapshot_factor() && iter_ % param_.snapshot() == 0))
          && Caffe::root_solver()) ||
          (request == SolverAction::SNAPSHOT)) {
       Snapshot();
@@ -415,7 +420,12 @@ void Solver<Dtype>::Snapshot() {
     LOG(FATAL) << "Unsupported snapshot format.";
   }
 
+  string remove_old = this->last_solverstate_;
+  this->last_solverstate_ = SnapshotFilename(".solverstate");
   SnapshotSolverState(model_filename);
+  if (!remove_old.empty()) {
+    std::remove(remove_old.c_str());
+  }
 }
 
 template <typename Dtype>
